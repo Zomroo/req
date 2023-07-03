@@ -14,38 +14,46 @@ bot_token = "6120849671:AAEx6gtXx34Ak-X1EaAkgdUkWq6YgvfqjAk"
 app = Client("telegram_bot", api_id, api_hash, bot_token=bot_token)
 
 
-def save_message_to_db(client, message):
+@app.on_message(filters.group & filters.text)
+def save_message(client, message):
+    # Check if the message starts with #
     if message.text.startswith("#"):
-        collection.insert_one({"message": message.text})
+        # Save the message to the MongoDB collection
+        collection.insert_one({"message": message.text, "chat_id": message.chat.id, "user_id": message.from_user.id})
 
 
-def authorize_user(user_id):
-    authorized_users = [5500572462, 6285981654]  # Add the authorized user IDs here
-    return user_id in authorized_users
+@app.on_message(filters.group & filters.command("r") & filters.user("user_id"))
+def show_messages(client, message):
+    # Fetch all the messages from the MongoDB collection
+    messages = collection.find({"chat_id": message.chat.id})
+    
+    response = ""
+    count = 1
+    for msg in messages:
+        response += f"{count}. {msg['message']}\n"
+        count += 1
+    
+    # Send the response to the group
+    client.send_message(message.chat.id, response)
 
 
-@app.on_message(filters.group)
-def handle_group_message(client, message):
-    save_message_to_db(client, message)
+@app.on_message(filters.group & filters.command("del") & filters.user("user_id"))
+def delete_message(client, message):
+    # Get the text after the /del command
+    query = message.text.split(maxsplit=1)[1].lower()
 
-
-@app.on_message(filters.group & filters.command("r"))
-def handle_r_command(client, message):
-    if message.chat.type == "private" or authorize_user(message.from_user.id):
-        messages = collection.find({}, {"_id": 0, "message": 1})
-        response = "\n".join([f"{i+1}. {doc['message']}" for i, doc in enumerate(messages)])
-        client.send_message(message.chat.id, response)
-
-
-@app.on_message(filters.group & filters.command("del"))
-def handle_del_command(client, message):
-    if message.chat.type == "private" or authorize_user(message.from_user.id):
-        command_parts = message.text.split(" ")
-        if len(command_parts) > 1:
-            del_message = " ".join(command_parts[1:])
-            collection.delete_one({"message": {"$regex": f"^{del_message}$", "$options": "i"}})
-            client.send_message(message.chat.id, f"Deleted message: {del_message}")
-
+    # Search for the message in the MongoDB collection
+    result = collection.find_one({"chat_id": message.chat.id, "message": {"$regex": query, "$options": "i"}})
+    
+    if result:
+        # Delete the message from the MongoDB collection
+        collection.delete_one({"_id": result["_id"]})
+        response = "Message deleted successfully."
+    else:
+        response = "Message not found."
+    
+    # Send the response to the group
+    client.send_message(message.chat.id, response)
 
 
 app.run()
