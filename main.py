@@ -29,7 +29,8 @@ def show_list(client, message):
     count = collection.count_documents({})
     response = "List of saved messages:\n"
     for index, doc in enumerate(cursor, start=1):
-        response += f"{index}. {doc['text']}\n"
+        if 'text' in doc:  # Check if the 'text' field exists in the document
+            response += f"{index}. {doc['text']}\n"
     response += f"Total messages: {count}"
     message.reply_text(response)
 
