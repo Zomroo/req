@@ -20,10 +20,10 @@ Sudo = [6285981654]  # Replace with your authorized user IDs
 @app.on_message(filters.text & filters.group)
 def save_message(client, message):
     if message.text.startswith("#"):
-        collection.insert_one({"message_id": message.id, "text": message.text})
+        collection.insert_one({"message_id": message.message_id, "text": message.text})
 
 # Show the list of saved messages
-@app.on_message(filters.command(["r"], prefixes="/") & filters.user(Sudo))
+@app.on_message(filters.command(["r"], prefixes="/") & filters.user(Sudo) & filters.group)
 def show_list(client, message):
     cursor = collection.find()
     count = collection.count_documents({})
@@ -35,7 +35,7 @@ def show_list(client, message):
     message.reply_text(response)
 
 # Delete a specific message from the MongoDB collection
-@app.on_message(filters.command(["del"], prefixes="/") & filters.user(Sudo))
+@app.on_message(filters.command(["del"], prefixes="/") & filters.user(Sudo) & filters.group)
 def delete_message(client, message):
     text = message.text[5:].strip().lower()
     deleted_count = collection.delete_many({"text": {"$regex": f"^{text}$", "$options": "i"}}).deleted_count
