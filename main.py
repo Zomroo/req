@@ -29,7 +29,7 @@ def handle_group_message(client, message):
     save_message_to_db(client, message)
 
 
-@app.on_message(filters.command("r"))
+@app.on_message(filters.group & filters.command("r"))
 def handle_r_command(client, message):
     if message.chat.type == "private" or authorize_user(message.from_user.id):
         messages = collection.find({}, {"_id": 0, "message": 1})
@@ -37,7 +37,7 @@ def handle_r_command(client, message):
         client.send_message(message.chat.id, response)
 
 
-@app.on_message(filters.command("del"))
+@app.on_message(filters.group & filters.command("del"))
 def handle_del_command(client, message):
     if message.chat.type == "private" or authorize_user(message.from_user.id):
         command_parts = message.text.split(" ")
@@ -45,6 +45,7 @@ def handle_del_command(client, message):
             del_message = " ".join(command_parts[1:])
             collection.delete_one({"message": {"$regex": f"^{del_message}$", "$options": "i"}})
             client.send_message(message.chat.id, f"Deleted message: {del_message}")
+
 
 
 app.run()
