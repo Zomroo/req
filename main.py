@@ -14,7 +14,7 @@ bot_token = "6120849671:AAEx6gtXx34Ak-X1EaAkgdUkWq6YgvfqjAk"
 app = Client("telegram_bot", api_id, api_hash, bot_token=bot_token)
 
 # Add authorized users to Sudo list
-Sudo = [123456789, 987654321]  # Replace with your authorized user IDs
+Sudo = [6285981654]  # Replace with your authorized user IDs
 
 # Save messages starting with "#" to the MongoDB collection
 @app.on_message(filters.text & filters.group)
