@@ -9,7 +9,7 @@ collection = db["messages"]
 # Initialize the Pyrogram client
 api_id = 14091414
 api_hash = "1e26ebacf23466ed6144d29496aa5d5b"
-bot_token = "6090225201:AAGcYT8rGQfMhZqihTNIWlM2JQDqiEJaVao"
+bot_token = "6120849671:AAEx6gtXx34Ak-X1EaAkgdUkWq6YgvfqjAk"
 
 app = Client("telegram_bot", api_id, api_hash, bot_token=bot_token)
 
