@@ -20,7 +20,7 @@ def save_message_to_db(client, message):
 
 
 def authorize_user(user_id):
-    authorized_users = [5500572462]  # Add the authorized user IDs here
+    authorized_users = [5500572462, 6285981654]  # Add the authorized user IDs here
     return user_id in authorized_users
 
 
