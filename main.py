@@ -13,47 +13,32 @@ bot_token = "6120849671:AAEx6gtXx34Ak-X1EaAkgdUkWq6YgvfqjAk"
 
 app = Client("telegram_bot", api_id, api_hash, bot_token=bot_token)
 
+# Add authorized users to Sudo list
+Sudo = [123456789, 987654321]  # Replace with your authorized user IDs
 
-@app.on_message(filters.group & filters.text)
+# Save messages starting with "#" to the MongoDB collection
+@app.on_message(filters.text & filters.group)
 def save_message(client, message):
-    # Check if the message starts with #
     if message.text.startswith("#"):
-        # Save the message to the MongoDB collection
-        collection.insert_one({"message": message.text, "chat_id": message.chat.id, "user_id": message.from_user.id})
+        collection.insert_one({"message_id": message.message_id, "text": message.text})
 
+# Show the list of saved messages
+@app.on_message(filters.command(["r"], prefixes="/") & filters.user(Sudo))
+def show_list(client, message):
+    cursor = collection.find()
+    count = collection.count_documents({})
+    response = "List of saved messages:\n"
+    for index, doc in enumerate(cursor, start=1):
+        response += f"{index}. {doc['text']}\n"
+    response += f"Total messages: {count}"
+    message.reply_text(response)
 
-@app.on_message(filters.group & filters.command("r") & filters.user("user_id"))
-def show_messages(client, message):
-    # Fetch all the messages from the MongoDB collection
-    messages = collection.find({"chat_id": message.chat.id})
-    
-    response = ""
-    count = 1
-    for msg in messages:
-        response += f"{count}. {msg['message']}\n"
-        count += 1
-    
-    # Send the response to the group
-    client.send_message(message.chat.id, response)
-
-
-@app.on_message(filters.group & filters.command("del") & filters.user("user_id"))
+# Delete a specific message from the MongoDB collection
+@app.on_message(filters.command(["del"], prefixes="/") & filters.user(Sudo))
 def delete_message(client, message):
-    # Get the text after the /del command
-    query = message.text.split(maxsplit=1)[1].lower()
+    text = message.text[5:].strip().lower()
+    deleted_count = collection.delete_many({"text": {"$regex": f"^{text}$", "$options": "i"}}).deleted_count
+    message.reply_text(f"Deleted {deleted_count} message(s) with text '{text}'")
 
-    # Search for the message in the MongoDB collection
-    result = collection.find_one({"chat_id": message.chat.id, "message": {"$regex": query, "$options": "i"}})
-    
-    if result:
-        # Delete the message from the MongoDB collection
-        collection.delete_one({"_id": result["_id"]})
-        response = "Message deleted successfully."
-    else:
-        response = "Message not found."
-    
-    # Send the response to the group
-    client.send_message(message.chat.id, response)
-
-
+# Start the bot
 app.run()
