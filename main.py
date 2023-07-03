@@ -20,7 +20,7 @@ Sudo = [6285981654]  # Replace with your authorized user IDs
 @app.on_message(filters.text & filters.group)
 def save_message(client, message):
     if message.text.startswith("#"):
-        collection.insert_one({"message_id": message.message_id, "text": message.text})
+        collection.insert_one({"message_id": message.id, "text": message.text})
 
 # Show the list of saved messages
 @app.on_message(filters.command(["r"], prefixes="/") & filters.user(Sudo))
